@@ -1,7 +1,7 @@
 require 'eventmachine'
 require 'em-hiredis'
 
-$debug = ENV['TEST'] == 'yep'
+$debug = !!ENV['TEST']
 
 class NotificationServer < EM::Connection
   @@relations = {}
