@@ -1,0 +1,14 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    em-hiredis (0.1.1)
+      hiredis (~> 0.4.0)
+    eventmachine (1.0.0)
+    hiredis (0.4.5)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  em-hiredis
+  eventmachine
