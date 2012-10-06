@@ -4,20 +4,36 @@ require 'em-hiredis'
 class NotificationServer < EM::Connection
   @@relations = {}
   
-  def self.notify(token, message)
-    channel = @@relations[token]
-    channel.push message if channel
+  class << self
+    def notify(token, message)
+      if channels = @@relations[token]
+        channels.each { |c| c.push message }
+      end
+    end
+    
+    def link(token, channel)
+      @@relations[token] ||= []
+      @@relations[token] << channel
+    end
+    
+    def unlink(token, channel)
+      @@relations[token].delete(channel)
+      @@relations[token].empty? && @@relations.delete(token)
+    end
   end
   
   def receive_data(token)
+    return if @token # Antihack
+    
     token.chomp!
-    p [:receive_data, token]
-    channel = EM::Channel.new
-    @@relations[token] = channel
-    channel.subscribe do |message|
-      p [:subscribe, message]
-      send_data(message)
-    end
+    @channel = EM::Channel.new
+    @channel.subscribe { |message| send_data(message) }
+    self.class.link(token, @channel)
+    @token = token
+  end
+  
+  def unbind
+    self.class.unlink(@token, @channel)
   end
 end
 
