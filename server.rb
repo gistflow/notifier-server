@@ -1,12 +1,15 @@
 require 'eventmachine'
 require 'em-hiredis'
 
+$debug = ENV['TEST'] == 'yep'
+
 class NotificationServer < EM::Connection
   @@relations = {}
   
   class << self
     def notify(token, message)
       if channels = @@relations[token]
+        p [:channels, channels] if $debug
         channels.each { |c| c.push message }
       end
     end
@@ -25,9 +28,14 @@ class NotificationServer < EM::Connection
   def receive_data(token)
     return if @token # Antihack
     
+    p [:token, token] if $debug
+    
     token.chomp!
     @channel = EM::Channel.new
-    @channel.subscribe { |message| send_data(message) }
+    @channel.subscribe do |message|
+      p [:message, message] if $debug
+      send_data(message + "\n")
+    end
     self.class.link(token, @channel)
     @token = token
   end
@@ -50,8 +58,10 @@ EventMachine.run do
   
   EventMachine.start_server('0.0.0.0', 1666, NotificationServer)
   
-  # publisher = EM::Hiredis.connect
-  # EM.add_periodic_timer(2) do
-  #   publisher.publish("notifications:123", "hello")
-  # end
+  if $debug
+    publisher = EM::Hiredis.connect
+    EM.add_periodic_timer(2) do
+      publisher.publish("notifications:123", "hello")
+    end
+  end
 end
