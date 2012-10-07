@@ -74,7 +74,7 @@ module Azazel
   end
 end
 
-Azazel.pid_file File.expand_path("../tmp/azazel.pid", __FILE__)
+Azazel.pid_file File.expand_path("../tmp/pids/azazel.pid", __FILE__)
 Azazel.stdout File.expand_path("../log/stdout.log", __FILE__)
 Azazel.daemonize!
 Azazel.start!
