@@ -1,3 +1,4 @@
+require 'fallen'
 require 'eventmachine'
 require 'em-hiredis'
 
@@ -45,23 +46,35 @@ class NotificationServer < EM::Connection
   end
 end
 
-EventMachine.run do
-  Signal.trap("INT")  { EventMachine.stop }
-  Signal.trap("TERM") { EventMachine.stop }
 
-  redis = EM::Hiredis.connect
-  redis.psubscribe('notifications:*')
-  redis.on(:pmessage) do |key, channel, message|
-    token = channel[/notifications:(.*)/, 1]
-    NotificationServer.notify(token, message)
-  end
+module Azazel
+  extend Fallen
   
-  EventMachine.start_server('0.0.0.0', 1666, NotificationServer)
-  
-  if $debug
-    publisher = EM::Hiredis.connect
-    EM.add_periodic_timer(2) do
-      publisher.publish("notifications:123", "hello")
+  def self.run
+    EventMachine.run do
+      Signal.trap("INT")  { EventMachine.stop }
+      Signal.trap("TERM") { EventMachine.stop }
+
+      redis = EM::Hiredis.connect
+      redis.psubscribe('notifications:*')
+      redis.on(:pmessage) do |key, channel, message|
+        token = channel[/notifications:(.*)/, 1]
+        NotificationServer.notify(token, message)
+      end
+
+      EventMachine.start_server('0.0.0.0', 1666, NotificationServer)
+
+      if $debug
+        publisher = EM::Hiredis.connect
+        EM.add_periodic_timer(2) do
+          publisher.publish("notifications:123", "hello")
+        end
+      end
     end
   end
 end
+
+Azazel.pid_file File.expand_path("../tmp/azazel.pid", __FILE__)
+Azazel.stdout File.expand_path("../log/stdout.log", __FILE__)
+Azazel.daemonize!
+Azazel.start!
