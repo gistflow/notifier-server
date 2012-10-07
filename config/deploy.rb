@@ -17,7 +17,7 @@ role :web, domain
 
 namespace :deploy do
   task :restart do
-    run "kill -9 `cat #{deploy_to}/current/tmp/pids/azazel.pid`" rescue nil
+    run "kill -9 `cat #{deploy_to}/shared/pids/azazel.pid`" rescue nil
     run "cd #{release_path} && bundle exec ruby server.rb"
   end
 end
