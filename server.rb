@@ -35,7 +35,7 @@ class NotificationServer < EM::Connection
     @channel = EM::Channel.new
     @channel.subscribe do |message|
       p [:message, message] if $debug
-      send_data(message + "\n")
+      send_data(message + "\0")
     end
     self.class.link(token, @channel)
     @token = token
